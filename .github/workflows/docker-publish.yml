@@ -31,12 +31,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [ linux/arm64 , linux/amd64 ]
+        arch: [ linux/amd64 ]
         include:
-          - arch: linux/arm64
-            builder: buildjet-4vcpu-ubuntu-2204-arm
+          # - arch: linux/arm64
+          #   builder: buildjet-4vcpu-ubuntu-2204-arm
           - arch: linux/amd64
-            builder: buildjet-4vcpu-ubuntu-2204
+            builder: ubuntu-latest
     name: Build - ${{matrix.arch}}
     runs-on: ${{matrix.builder}}
     permissions:
@@ -88,9 +88,9 @@ jobs:
           digest="${{ steps.build-and-push.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
       - name: Upload digest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: digests
+          name: digests-${{matrix.builder}}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -100,10 +100,11 @@ jobs:
       - build
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: digests
+          pattern: digests-*
           path: /tmp/digests
+          merge-multiple: true
       - name: Set up QEMU (arm64)
         if: runner.arch != 'arm64'
         uses: docker/setup-qemu-action@v2
